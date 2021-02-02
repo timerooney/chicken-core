@@ -93,8 +93,7 @@
 (define sudo-install #f)
 (define sudo-program (or (get-environment-variable "SUDO") "sudo"))
 (define update-module-db #f)
-(define override-location #f)
-(define override-transport #f)
+(define override-source #f)
 (define purge-mode #f)
 (define keepfiles #f)
 (define print-repository #f)
@@ -318,8 +317,9 @@
 			 ;; others are ignored
 			 ))
 		  ((server)
-		   (set! default-servers
-		     (append default-servers (cdr x))))
+		   (unless override-source
+		     (set! default-servers
+		       (append default-servers (cdr x)))))
 		  ((map)
 		   (set! mappings
 		     (append
@@ -1057,8 +1057,8 @@ usage: chicken-install [OPTION ...] [NAME[:VERSION] ...]
        -target                  when cross-compiling, compile extension only for target
        -test                    run included test-cases, if available
   -u   -update-db               update export database
-  -l   -location LOCATION       install from given location instead of default
-  -t   -transport TRANSPORT     use given transport instead of default
+       -server URL              install from given server instead of default
+  -l   -location LOCATION       use given transport instead of default
        -repository              print path used for egg installation
        -override FILENAME       override versions for installed eggs with information from file
        -from-list FILENAME      install eggs from list obtained by `chicken-status -list'
@@ -1127,12 +1127,16 @@ EOF
                   ((member arg '("-u" "-update-db"))
                    (set! update-module-db #t)
                    (loop (cdr args)))
+		  ((equal? arg "-server")
+		   (set! override-source #t)
+		   (set! default-servers (list (cadr args)))
+		   (set! default-locations '())
+		   (loop (cddr args)))
 		  ((member arg '("-l" "-location"))
-		   (set! override-location #t)
-		   (loop cdr args))
-		  ((member arg '("-t" "-transport"))
-		   (set! override-transport #t)
-		   (loop cdr args))
+		   (set! override-source #t)
+		   (set! default-locations (list (cadr args)))
+		   (set! default-servers '())
+		   (loop (cddr args)))
                   ((equal? arg "-no-install-dependencies")
                    (set! no-install-dependencies #t)
                    (loop (cdr args)))
